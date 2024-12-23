@@ -5,6 +5,7 @@
 #include <time.h>
 
 #define H_STR "H"
+#define G2_STR "g2"
 #define F_PRIME "f_prime"
 #define INITIAL_STR "initial_coord"
 #define DIST_STR "distance"
@@ -40,7 +41,7 @@ int atom_num = UX * UY * UZ;
 double volume;
 double b[3][3]; //reciprocal unit cell vectors
 double a[3][3]; //unit cell vectors
-int i_max = 2;
+int i_max = 1;
 
 void FILE_WRITING(char *lattice_structure, double **arr, int num){
     char lattice_filename[50];
@@ -199,7 +200,7 @@ int fn_neighbour_list(int **neigh_list, double **atom_coords, int num, double **
             if(i == j){continue;}
 
             for(int k = 0 ; k < 3 ; k++){
-                t[k] = atom_coords[j][k] - atom_coords[i][k];
+                t[k] = atom_coords[i][k] - atom_coords[j][k];
             }
             interaction_type = atom_coords[j][3] + atom_coords[i][3];
 
@@ -283,13 +284,13 @@ double fn_F_prime_coulomb(double r,double interaction_type, double vector_compon
 
 
         if(interaction_type == -2){ //Na-Na interaction
-            F_prime = (- COULOMB / r3);
-        }
-        if(interaction_type == 0){ //Na-Cl interaction
             F_prime = ( - COULOMB / r3);
         }
+        if(interaction_type == 0){ //Na-Cl interaction
+            F_prime = (  - COULOMB / r3);
+        }
         if(interaction_type == 2){ //Cl-Cl interaction
-            F_prime = (- COULOMB / r3);
+            F_prime = ( - COULOMB / r3);
         }
 
     return  F_prime * vector_component;
@@ -300,13 +301,13 @@ double fn_F_prime_buck(double r,double interaction_type,double vector_component)
     double r8 = r * r * r * r * r * r * r * r ;
 
         if(interaction_type == -2){ //Na-Na interaction
-            F_prime =  - (A_Na_Na / RHO_Na_Na * exp(-r / RHO_Na_Na)) + (6 * C_Na_Na / r8);
+            F_prime =  -((A_Na_Na / RHO_Na_Na * exp(-r / RHO_Na_Na)) - (6 * C_Na_Na / r8));
         }
         if(interaction_type == 0){ //Na-Cl interaction
-            F_prime =  - ( A_Na_Cl / RHO_Na_Cl * exp(-r / RHO_Na_Cl)) + (6 * C_Na_Cl / r8);
+            F_prime =  - (( A_Na_Cl / RHO_Na_Cl * exp(-r / RHO_Na_Cl)) - (6 * C_Na_Cl / r8));
         }
         if(interaction_type == 2){ //Cl-Cl interaction
-            F_prime =  - ( A_Cl_Cl / RHO_Cl_Cl * exp(-r / RHO_Cl_Cl)) + (6 * C_Cl_Cl / r8);
+            F_prime =  - (( A_Cl_Cl / RHO_Cl_Cl * exp(-r / RHO_Cl_Cl)) - (6 * C_Cl_Cl / r8));
         }
 
     return  F_prime*vector_component;
@@ -317,11 +318,11 @@ void fn_coulomb_buck_derivative(int** neigh_list,int neigh_size, double* neigh_d
     for(int i = 0 ; i < neigh_size ; i++){
         //calculate the magnitude of F prime
         for(int j = 0 ; j < 3 ; j++){
-            double F_prime =  (fn_F_prime_coulomb(neigh_distance[i],interaction_list[i],vector[i][j]) + fn_F_prime_buck(neigh_distance[i],interaction_list[i],vector[i][j]));
+            double F_prime =  -((fn_F_prime_coulomb(neigh_distance[i],interaction_list[i],vector[i][j]) + fn_F_prime_buck(neigh_distance[i],interaction_list[i],vector[i][j])));
             //gradient of atom A in the pair consists of x y z component
-            gradient[neigh_list[i][idx0]][j] += -  F_prime/2 ;
+            gradient[neigh_list[i][idx0]][j] +=  F_prime/2 ;
             //gradient of atom B in the pair also have x y z component, but its gradient is the negative of the gradient of atom A
-            gradient[neigh_list[i][idx1]][j] +=  - F_prime/2;
+            gradient[neigh_list[i][idx1]][j] += - F_prime/2;
         }
 
     }
@@ -338,10 +339,10 @@ void fn_coulomb_buck_derivative2(int** neigh_list,int neigh_size, double* neigh_
 
 
         for(int j = 0 ; j < 3 ; j++){
-            double F_prime =  (fn_F_prime_coulomb(neigh_distance[i],interaction_list[i],vector[i][j]) + fn_F_prime_buck(neigh_distance[i],interaction_list[i],vector[i][j]));
+            double F_prime =  -((fn_F_prime_coulomb(neigh_distance[i],interaction_list[i],vector[i][j]) + fn_F_prime_buck(neigh_distance[i],interaction_list[i],vector[i][j])));
 
             //gradient of atom A in the pair consists of x y z component
-            gradient[neigh_list[i][idx0]][j] +=   F_prime /2;
+            gradient[neigh_list[i][idx0]][j] += -  F_prime /2;
             //gradient of atom B in the pair also have x y z component, but its gradient is the negative of the gradient of atom A
             gradient[neigh_list[i][idx1]][j] +=   F_prime/2;
         }
@@ -369,7 +370,7 @@ double fn_line_minimisation(double** atom_coords,double** H,double** f_prime,int
 
     double** little_displacement_atom_coords = (double **)malloc(atom_num * sizeof(double *));
     for (int i = 0; i < atom_num; i++){
-        little_displacement_atom_coords[i] = (double *)malloc(3 * sizeof(double));
+        little_displacement_atom_coords[i] = (double *)malloc(4 * sizeof(double));
     }
 
     double row_num = atom_num * (atom_num - 1);
@@ -398,6 +399,7 @@ double fn_line_minimisation(double** atom_coords,double** H,double** f_prime,int
         for(int j = 0 ; j < 3 ; j++){
             little_displacement_atom_coords[i][j]  = (SMALL_SIGMA * H[i][j]) + atom_coords[i][j];
         }
+                little_displacement_atom_coords[i][3] = atom_coords[i][3];
     }
 
     //create new neighbour list for the displaced atoms
@@ -413,11 +415,6 @@ double fn_line_minimisation(double** atom_coords,double** H,double** f_prime,int
     for(int i = 0 ; i < atom_num ; i++){
         numerator += (f_prime[i][0] * H[i][0]) + (f_prime[i][1] * H[i][1]) + (f_prime[i][2] * H[i][2]);
         denominator += ((displaced_f_prime[i][0] - f_prime[i][0]) * H[i][0]) + ((displaced_f_prime[i][1] - f_prime[i][1]) * H[i][1]) + ((displaced_f_prime[i][2] - f_prime[i][2]) * H[i][2]);
-    }
-
-    if(step == 0){
-        DEBUG_FILE_WRITING(H_STR,H,atom_num);
-        DEBUG_FILE_WRITING(F_PRIME,f_prime,atom_num);
     }
 
     alpha =  -SMALL_SIGMA * numerator / (denominator);
@@ -500,6 +497,9 @@ int FN_CG(double** atom_coords,double* coulomb_energy){
     fn_coulomb_buck_derivative(neighbour_list,neighbour_num,neighbour_distance, interaction_list, position_vector,g1,0,1);
     //obtain h by calculating the coulomb buck derivative at all atom coordinates
     fn_coulomb_buck_derivative(neighbour_list,neighbour_num,neighbour_distance,interaction_list, position_vector,h,0,1);
+
+
+    DEBUG_FILE_WRITING(H_STR,h,atom_num);
         
 
     while(i < i_max || residual_magnitude > 0.05){
@@ -539,6 +539,7 @@ int FN_CG(double** atom_coords,double* coulomb_energy){
         int f_prime_neighbour_num = fn_neighbour_list(neighbour_list, atom_coords, atom_num , position_vector, neighbour_distance,interaction_list);
         //calculate f prime
         fn_coulomb_buck_derivative2(neighbour_list,f_prime_neighbour_num,neighbour_distance,interaction_list, position_vector,f_prime,0,1);
+         DEBUG_FILE_WRITING(F_PRIME,f_prime,atom_num);
 
         /*PERFORM A SINGLE CG STEP====================================================================*/
 
@@ -567,11 +568,10 @@ int FN_CG(double** atom_coords,double* coulomb_energy){
         //obtain g2 by calculating the coulomb buck derivative at all atom coordinates
         fn_coulomb_buck_derivative(this_neighbour_list,this_neighbour_num,this_neighbour_distance,this_interaction_list, this_position_vector,g2,0,1);
 
-
+        DEBUG_FILE_WRITING(G2_STR,g2,atom_num);
 
         double gamma = fn_gamma(g1,g2);
 
-        //DEBUG_FILE_WRITING(H_STR,g2,atom_num);
 
         printf("gamma = %lf \t resi mag = %e \t alpha = %lf\n",gamma, residual_magnitude,alpha);
 
@@ -636,7 +636,7 @@ int main(){
     //initial unpreturbed atom coords
 
     //perturbed atom coords
-    FN_perturbate(fcc_atom_coords);
+    //FN_perturbate(fcc_atom_coords);
     //FILE_WRITING(PERTURBE_STR , fcc_atom_coords,atom_num);
 
     //perform steepest descent
