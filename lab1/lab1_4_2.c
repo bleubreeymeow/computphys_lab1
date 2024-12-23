@@ -268,7 +268,7 @@ void FN_perturbate(double** atom_coords){
     double max = 0.3;
     for(int i = 0 ; i < atom_num ; i++){
         for(int j = 0 ; j < 3 ; j++){
-            double random = (rand() * (0.05) / RAND_MAX ) + min;
+            double random = (rand() * (0.1) / RAND_MAX ) - 0.05;
             atom_coords[i][j] += A_CONSTANT * random;
         }
     }
