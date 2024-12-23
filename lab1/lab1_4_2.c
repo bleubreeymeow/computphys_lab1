@@ -317,15 +317,23 @@ void fn_coulomb_buck_derivative(int** neigh_list,int neigh_size, double* neigh_d
 
     for(int i = 0 ; i < neigh_size ; i++){
         //calculate the magnitude of F prime
-        for(int j = 0 ; j < 3 ; j++){
-            double F_prime =  -((fn_F_prime_coulomb(neigh_distance[i],interaction_list[i],vector[i][j]) + fn_F_prime_buck(neigh_distance[i],interaction_list[i],vector[i][j])));
+            //double F_prime =  - 0.5*((fn_F_prime_coulomb(neigh_distance[i],interaction_list[i],vector[i][j]) + fn_F_prime_buck(neigh_distance[i],interaction_list[i],vector[i][j])));
             //gradient of atom A in the pair consists of x y z component
-            gradient[neigh_list[i][idx0]][j] +=  F_prime/2 ;
+            gradient[neigh_list[i][0]][0] +=  0.5*((fn_F_prime_coulomb(neigh_distance[i],interaction_list[i],vector[i][0]) + fn_F_prime_buck(neigh_distance[i],interaction_list[i],vector[i][0])));
+            gradient[neigh_list[i][0]][1] += - 0.5*((fn_F_prime_coulomb(neigh_distance[i],interaction_list[i],vector[i][1]) + fn_F_prime_buck(neigh_distance[i],interaction_list[i],vector[i][1])));
+            gradient[neigh_list[i][0]][2] += - 0.5*((fn_F_prime_coulomb(neigh_distance[i],interaction_list[i],vector[i][2]) + fn_F_prime_buck(neigh_distance[i],interaction_list[i],vector[i][2])));
             //gradient of atom B in the pair also have x y z component, but its gradient is the negative of the gradient of atom A
-            gradient[neigh_list[i][idx1]][j] += - F_prime/2;
-        }
+            gradient[neigh_list[i][1]][0] -=  - 0.5*((fn_F_prime_coulomb(neigh_distance[i],interaction_list[i],vector[i][0]) + fn_F_prime_buck(neigh_distance[i],interaction_list[i],vector[i][0])));
+            gradient[neigh_list[i][1]][1] -=   0.5*((fn_F_prime_coulomb(neigh_distance[i],interaction_list[i],vector[i][1]) + fn_F_prime_buck(neigh_distance[i],interaction_list[i],vector[i][1])));
+            gradient[neigh_list[i][1]][2] -=   0.5*((fn_F_prime_coulomb(neigh_distance[i],interaction_list[i],vector[i][2]) + fn_F_prime_buck(neigh_distance[i],interaction_list[i],vector[i][2])));
+
+
+        
 
     }
+
+
+
 
 
 
@@ -336,27 +344,15 @@ void fn_coulomb_buck_derivative2(int** neigh_list,int neigh_size, double* neigh_
 
     for(int i = 0 ; i < neigh_size ; i++){
         //calculate the magnitude of F prime
-
-
-        for(int j = 0 ; j < 3 ; j++){
-            double F_prime =  -((fn_F_prime_coulomb(neigh_distance[i],interaction_list[i],vector[i][j]) + fn_F_prime_buck(neigh_distance[i],interaction_list[i],vector[i][j])));
-
-            //gradient of atom A in the pair consists of x y z component
-            gradient[neigh_list[i][idx0]][j] += -  F_prime /2;
+            gradient[neigh_list[i][0]][0] +=  - 0.5*((fn_F_prime_coulomb(neigh_distance[i],interaction_list[i],vector[i][0]) + fn_F_prime_buck(neigh_distance[i],interaction_list[i],vector[i][0])));
+            gradient[neigh_list[i][0]][1] +=  0.5*((fn_F_prime_coulomb(neigh_distance[i],interaction_list[i],vector[i][1]) + fn_F_prime_buck(neigh_distance[i],interaction_list[i],vector[i][1])));
+            gradient[neigh_list[i][0]][2] +=  0.5*((fn_F_prime_coulomb(neigh_distance[i],interaction_list[i],vector[i][2]) + fn_F_prime_buck(neigh_distance[i],interaction_list[i],vector[i][2])));
             //gradient of atom B in the pair also have x y z component, but its gradient is the negative of the gradient of atom A
-            gradient[neigh_list[i][idx1]][j] +=   F_prime/2;
-        }
-        /*double F_prime =  fn_F_prime_coulomb(neigh_distance[i],interaction_list[i]) + fn_F_prime_buck(neigh_distance[i],interaction_list[i]);
+            gradient[neigh_list[i][1]][0] -=   0.5*((fn_F_prime_coulomb(neigh_distance[i],interaction_list[i],vector[i][0]) + fn_F_prime_buck(neigh_distance[i],interaction_list[i],vector[i][0])));
+            gradient[neigh_list[i][1]][1] -=  - 0.5*((fn_F_prime_coulomb(neigh_distance[i],interaction_list[i],vector[i][1]) + fn_F_prime_buck(neigh_distance[i],interaction_list[i],vector[i][1])));
+            gradient[neigh_list[i][1]][2] -=  - 0.5*((fn_F_prime_coulomb(neigh_distance[i],interaction_list[i],vector[i][2]) + fn_F_prime_buck(neigh_distance[i],interaction_list[i],vector[i][2])));
 
-        for(int j = 0 ; j < 3 ; j++){
-            //gradient of atom A in the pair consists of x y z component
-            gradient[neigh_list[i][idx0]][j] +=  F_prime * vector[i][j];
-        }
 
-        for(int j = 0 ; j < 3 ; j++){
-            //gradient of atom B in the pair also have x y z component, but its gradient is the negative of the gradient of atom A
-            gradient[neigh_list[i][idx1]][j] -=  F_prime * vector[i][j];
-        }*/ 
 
     }
 
@@ -399,7 +395,7 @@ double fn_line_minimisation(double** atom_coords,double** H,double** f_prime,int
         for(int j = 0 ; j < 3 ; j++){
             little_displacement_atom_coords[i][j]  = (SMALL_SIGMA * H[i][j]) + atom_coords[i][j];
         }
-                little_displacement_atom_coords[i][3] = atom_coords[i][3];
+            little_displacement_atom_coords[i][3] = atom_coords[i][3];
     }
 
     //create new neighbour list for the displaced atoms
