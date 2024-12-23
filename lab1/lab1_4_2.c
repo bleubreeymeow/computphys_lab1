@@ -636,7 +636,7 @@ int main(){
     //initial unpreturbed atom coords
 
     //perturbed atom coords
-    //FN_perturbate(fcc_atom_coords);
+    FN_perturbate(fcc_atom_coords);
     //FILE_WRITING(PERTURBE_STR , fcc_atom_coords,atom_num);
 
     //perform steepest descent
